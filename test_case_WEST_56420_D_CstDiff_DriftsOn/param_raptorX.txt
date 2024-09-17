@@ -1,0 +1,442 @@
+!*****************************************
+! Main input file for the raptorX code
+!*****************************************
+
+!****************************
+! Initialisation parameters
+!****************************
+&INIT_LST
+  restart = 1 ! restart mode
+		      ! 0: new simulation from scratch
+		      ! 1: normal restart (same mesh)
+		      ! 2: restart from 2D simulation: the first poloidal plane is duplicated to all PP
+  iniPerturb = 0.e-2 ! If non zero, amplitude of perturbation to initial density field to excite turbulence
+  resetPHI = .FALSE. ! if true, the electrostatic potential and the vorticity are set to zero even at restart
+/
+
+!****************************
+! Model
+!****************************
+&MODEL_LST
+  solveT = .TRUE.	      ! solve temperature equation?
+  coldIons = .FALSE.      ! Cold ions? If yes, Ti is forced back to a very small value at each time step
+  solvePHI = .TRUE.       ! Vorticity equation
+  solveAPara = .FALSE.    ! Solves for the magnetic vector potential field A to allow fluctuations of the magnetic field
+  solvejPara = .FALSE.    ! Solves for the parallel current to include the term dJ/dt in the vorticity equation
+  Ambipol = 0	  ! 0: pure ambipolar electrons (jpara = 0 assumed to compute v_para_e 
+                  !    / v_dia_e replaced by v_dia_i except for W equation)
+                  ! 1: v_para_e computed considering j_para (hence enabling electron ion parallel friction)
+                  !    but v_para_e used for advection still ambipolar (see 0 above)
+                  ! 2: No ambipolar assumption - consistency between currents and v_para_e (not yet available)
+  DiffParal = .TRUE.  	  ! Turn on parallel diffusion (viscosity and heat)
+  DiffPerp = .TRUE.       ! Perpendicular diffusion	
+  HyperDiffPerp = .FALSE. ! Perpendicular hyper-diffusion	
+  Advec = .TRUE.      	  ! Advection
+  AMphys = .TRUE.   	  ! Ionization/Recombination
+  EnableExB = .TRUE. 	  ! Turn on ExB drift
+  EnableGradB = .TRUE.   ! Turn on gradB drift
+  EnableCurvB = .TRUE.   ! Turn on curB drift
+  EnablePiParaDrift = .FALSE. ! Turn on drift linked to piPara (Braginskii tensor)
+  EnableNuParal = .TRUE.  ! Turn on parallel viscosity
+  EnableKappaDot = .FALSE.! Turn on Kappa dot vPerp terms in "Braginskii" stress tensor
+  EnablePiParallelDivV = .FALSE. ! Turn on divV terms in "Braginskii" stress tensor	
+  EnableEMflutter = .TRUE. ! Allow small perturbations in the magnetic field due to electromagnetic effects
+  NeutralModel = 1        ! 0: No neutrals
+                          ! 1: EIRENE
+                          ! 2: Fluid neutrals
+  TurbulenceModel = 0     ! 0: No model
+                          ! 1: k single equation
+  collisionalClosure = 1  ! 1: Zhdanov
+  		                  ! 2: Braginskii
+/
+
+!****************************
+! Geometry related parameters
+!****************************
+&GEOM_LST
+  simu2D = .TRUE. ! 2D (poloidal plane) simulation?
+		! If .TRUE., code run with a single poloidal plane, ie used in 2D transport mode, in which case all toroidal derivatives are set to 0.
+		! If .FALSE., code run in 3D mode. Turbulence can arise in this mode if conditions are adapted.
+		! For purely 2D simulations, it is strongly recommended to run with simu2D = .TRUE. to reduce the computing time
+  GeomAxi = .TRUE. ! axisymmetric magnetic equilibrium (hence mesh)?
+  WallAxi = .TRUE. ! axisymmetric wall geometry (hence penalization mask)?
+  extendCore = .FALSE. ! Extend the domain to the core?
+  coreDynamicFactor = 50. ! Core time constant is artificially divided by coreDynamicFactor:
+  		    !    - Faster dynamic if coreDynamicFactor > 1
+  		    !    - Slower dynamic if coreDynamicFactor < 1
+ 		    !    - No effect (real dynamic) if coreDynamicFactor = 1
+  PrecodedMesh = 0 ! Predefined geometry or geometry loaded from input files?
+                   ! 0: load from file
+	               ! 1: a predefined (hard-coded) geometry is used
+	               ! In that case, the param_geom.txt file is necessary to define the geometrical parameters
+	               ! 2: an analytical test mesh is used (typically for MMS tests)
+  reverseB = .FALSE. ! Tells if the magnetic field should be reversed with respect to the input file (set to .TRUE. to do so)
+  	                 ! Applies to both the toroidal and poloidal fields so effectively does not change the helicity of field lines, just the direction of the B vector and of the gradB drift
+  	                 ! If one wants to change the helicity of fied lines (ie, reverse only Bpol or only Btor), one needs to use a wise combination of reverse B and BpolScale
+  BpolScale = 1. ! Amplification factor of poloidal field with respect to the mesh input file
+		         ! Allows one to scan Ip easily without changing the mesh input file. Can be negative to reverse Bpol.
+  BpertScale = 1. ! Amplification factor for perturbation field with respect to the mesh input file
+                  ! no effect if no perturbation field has been provided in the mesh file
+  LphiDiv = 1 ! Integer parameter determining extent of domain in toroidal direction
+  	          ! The toroidal angular extent of the domain in degrees is given by 360°/LphiDiv (e.i., set to 1 for full-torus, to 2 for 1/2 torus...)
+	          ! In simulations with mesh loaded from external files (PrecodedMesh=0), the toroidal extent of the mesh is scaled by 1/LphiDiv.
+  NphiOverride = 0  ! Used to force regularly spaced in phi 3D mesh from 2D mesh (set to 0 to use default value stored in mesh.h5)
+  RchiSmooth = 1.e-3   ! distance to any domain borrder where beta is artificially reduced [m]
+                       ! the electromagnetic coupling factor is multiplied by 0 on the wall and by betaMultiplier for dist > RchiSmooth with a smooth transition
+/
+
+!****************************
+! Time stepping
+!****************************
+&TIME_LST
+  NITER = 10000 ! Total number of iterations
+  CFLtarget = 0.2 ! Target CFL value
+  ! The next 3 parameters determine which CFL criterion to use to constrain the time step.
+  ! At least one of them needs to be set to TRUE, otherwise useCFLvelocities will be used by default
+  useCFLvelocities = .TRUE. ! Constrain time step with CFL condition on velocities
+  useCFLfluxes = .FALSE. ! Constrain time step with CFL condition on fluxes
+  useCFLdtFields = .FALSE. ! Constrain time step with CFL condition on time derivatives
+  dtmin = 1.e-4 ! Minimum allowed time step
+  dtmax = 1.e3 ! Maximum allowed time step
+  dtsavePlasma = 0. ! Time between 2 saves of the plasma; takes priority on NsavePlasma except if it is set to a non zero value.
+  NsavePlasma = 5000 ! Number of iterations between 2 saves of the plasma fields; used only if dtsavePlasma is equal to 0.
+  NsaveTimeInfo = 1000 ! Number of iterations between 2 loggings of CFL information in the timeInfo.txt file.
+  TStype = 1  ! Type of time stepper to be used
+              ! Currently implemented:
+              !      - 1 = Runge-Kutta (order 1, 2, 4)
+              !      - 2 = VSIMEX (order 1, 2, 3)
+  TSorder = 1 ! Order of time-stepper (see TStype for allowed orders)
+/
+
+!****************************
+! Reference parameters (normalization)
+!****************************
+&REF_LST
+  R0 = 0.     ! Reference major radius [m] / taken from mesh.h5 if =0
+  a0 = 0.     ! Reference minor radius [m] / taken from mesh.h5 if =0
+  Z0 = 0.     ! Reference magnetic axis height [m] / taken from mesh.h5 if =0	
+  B0 = 0.     ! Reference magnetic field [T] / taken from mesh.h5 if =0
+  n0 = 1e19   ! Reference density [/m3]
+  T0 = 100.   ! Reference temperature |eV]
+/
+
+!****************************
+! Plasma composition
+!****************************
+&PHYS_LST
+  Nelts = 1 ! Number of chemical elements in the plasma
+  SymbList = 'D' ! Symbols of chemical elements, inside quotes and delimited by comas
+/
+
+!****************************
+! Boundary conditions
+!****************************
+&BC_LST
+  ! The nBCtype, nBC, TBCtype, TBC, are used only when extendCore = .FALSE.
+  ! When extendCore = .TRUE., use the CoreSn and CoreSE parameters to set incoming fluxes
+  nBCtype = 1          ! Type of boundary conditions for density (Nelts value separated by commas)
+                       !  * 0: Dirichlet (force density value in Ghost cells - value in m-3 at nBC entry) 
+                       !  * 1: Particle flux (force integrated particle flux thru core BC - value in part/s at nBC entry) 
+                       !  * 2: Dirichlet on Z-ponderated concentration with respect to electron density ([dimensionless] value at nBC entry)
+  nBC = 0.             ! Boundary conditions for density (Nelts values separated by comas)
+      	       	       ! In case of flux BC (nBCtype = 1), the flux prescribed is the full-torus equivalent flux
+		               ! I.e., the flux that will be injected in the domain will be scaled by 1 / LphiDiv
+		               ! In other words, when changing LphiDiv, no need to rescale nBC to get the same result
+  TBCtype = 1, 1          ! Type of boundary conditions for temperature (Nelts+1 value separated by commas)
+                          !  * 0: Dirichlet (force temperature value in Ghost cells - value in eV at TBC entry)
+                       	  !  * 1: Power (force the power thru core BC - value in W at TBC entry)
+  TBC = 0.2245e6, 0.2245e6! Boundary conditions for temperature (Nelts+1 values separated by comas, the first one being for electrons)
+      	       	       	  ! In case of flux BC (TBCtype = 1), the flux prescribed is the full-torus equivalent flux
+		       	          ! I.e., the flux that will be injected in the domain will be scaled by 1 / LphiDiv
+		       	          ! In other words, when changing LphiDiv, no need to rescale TBC to get the same result
+  ! Note that in case of extended core mode (extendCore=.TRUE.), the 4 previous parameters are ignored
+  gammaSHelt = 4.5, 2.5 ! Sheath heat transmission factors for each element (Nelts+1 values separated by commas, first value is for electrons)
+  BCtanWall = 0		! Type of radial boundary conditions, i.e. for tangential fluxes in/out at the wall
+					! * 0: as default, all the in/out fluxes are set to zero at the wall
+					! * 1: it allows only outgoing (i.e., positive) fluxes towards the wall, while incoming fluxes are set to zero
+/
+
+!****************************
+! Sources
+!****************************
+&SOURCE_LST
+  ! The next 2 parameters are for sources in the core cell in case of extended core mode (extendCore=.TRUE.)
+  ! Note that prescribed sources are the full-torus equivalent sources
+  ! I.e., the source that will be injected in the domain will be scaled by 1 / LphiDiv
+  ! In other words, when changing LphiDiv, no need to rescale te sources to get the same result
+  CoreSn = 0.e21            ! Particle source in core cell (if exists) [part/s] (Nelts values separated by comas)
+  CoreSE = 0.e5, 0.e5       ! Heat source in core cell (if exists) [W] (Nelts+1 values separated by comas, the first one being for electrons)
+  ! The next 2 parameters are for external sources in the domain. If one of them is non-zero, the source distribution is loaded from the sources.h5 file
+  Sn = 0.e22          ! Particle source (in simulation domain, integrated) [part/s] (Nelts values separated by comas)
+  SE = 0.e6, 0.e6       ! Heat source (in simulation domain, integrated) [W] (Nelts+1 values separated by comas, the first one being for electrons)
+/
+
+!****************************
+! Transport coefficients
+!****************************
+&TRANSP_LST
+  loadDiffusionMaps = .FALSE.    ! if true, the code reads "diffusion.h5" file (that contains D, nu, and chi maps for each element)
+                                 ! Warning: when set to TRUE, values of D0, nu0, chi0, in the next lines here are now interpreted as
+				                 ! minimum values. Setting them to very low values (e.g. 1.e-6) ensures the provided map is applied as provided.
+                                 !    - if map only provided for first ion and electrons (chi_e), same ion map used for all ions)
+  D0 = 3.e-1 	         ! Particle diffusivity [m2/s] (Nelts)
+  nu0 = 3.e-1, 3.e-1      ! Perpendicutar viscosity [m2/s] The first element is for electrons and will be ignored if run with solvejPara = .FALSE. (Nelts + 1)
+  chi0 = 1., 1.     ! Ion perpendicular heat diffusivity [m2/s] (Nelts+1)
+  zeta0 = 3.e-1        ! Vorticity perpendicular diffusivity [m2/s]
+  Xi0 = 3.e-1          ! Magnetic potential perpendicular diffusivity [m2/s]
+  HD0 = 1.e-6             ! Particle hyper-diffusivity [m4/s] (Nelts)
+  Hnu0 = 1.e-6, 1.e-6     ! Perpendicutar hyper-viscosity [m4/s] The first element is for electrons and is ignored overall (Nelts + 1)
+  Hchi0 = 1.e-6, 1.e-6    ! Ion perpendicular heat hyper-diffusivity [m4/s] (Nelts+1)
+  Hzeta0 = 1.e-6       ! Vorticity perpendicular hyper-diffusivity [m4/s]
+  Dbuffer = 0.   ! extra diffusion in buffers [m2/s]
+  DXP = 0.       ! extra diffusion around X-points [m2/s]
+  loadExternalVelocityMaps = .FALSE.   ! if true, load velocities.h5 for external velocity maps
+/
+
+!****************************
+! Flux limiters
+!****************************
+&FL_LST
+  KappaFluxLimiter = 0.2, 2. ! Flux limiter coefficients for parallel conductive heat fluxes (due to temperature gradient of considered species)
+  		     	      	     ! 	* Nelts+1 values separated by comas, the first one being for electrons
+				             !	* to switch limiters, set to very high values (eg, 1.E5)
+  ZhdanovFluxLimiter = 0.2, 0.2 ! Flux limiter coefficients for parallel conductive heat fluxes (due to other species)
+  		     	      	        ! 	* Nelts+1 values separated by comas, the first one being for electrons
+				                !	* to switch limiters, set to very high values (eg, 1.E5)
+  NuFluxLimiter = 0.5     ! Flux limiter coefficients for parallel momentum conductive fluxes due to the parallel viscosity
+	                      ! * Nelts values separated by comas
+        	              ! * to switch off limiters, set to very high values (eg, 1.E5)
+/
+
+!****************************
+! Buffers
+!****************************
+&BUFFER_LST
+  bufferTypeCore = 0       ! type of core buffer
+                           ! * 0: none
+		                   ! * 1: Flux surface average (toroidal+poloidal)
+		                   ! * 2: Toroidal average
+                           ! * 3: Poloidal average
+  bufferTypeWall = 0       ! type of wall buffer
+                           ! * 0: none
+		                   ! * 1: Flux surface average (toroidal+poloidal)
+		                   ! * 2: Toroidal average
+                           ! * 3: Poloidal average
+  coreBufferWidth = 0      ! Width (in radial mesh cells) of buffer region at core boundary. 0 for no buffer
+  wallBufferWidth = 0      ! Width (in radial mesh cells) of buffer region at wall boundary. 0 for no buffer
+/
+
+
+!***********************************
+! Vorticity related parameters
+!***********************************
+&VORT_LST
+  EtaParalMultiplier = 1. ! Multiply parallel resistivity
+  betaMultiplier = 1. ! Multiply the plasma beta parameter
+  electronMassMultiplier = 1. ! Multiply the electron mass in the electron inertia term of Ohm's law
+  sheathBCLinType = 2 ! Linearisation type for sheath boundary conditions on the parallel current
+             ! 1 = linearisation around PHI^n: more precise but risk of instability if time step or NshortCyclingVortMat too large
+	     ! 2 = linearisation around Lambda: low precision, good stability
+  filteringPHI = .FALSE.  ! If .TRUE., a diffusive filtering is applied to the electric potential before computing ExB drift. 
+                       ! The radius of the filtering is provided by LsmoothPHI.
+  LsmoothPHI = 1.e-3   ! characteristic scale of phi diffusive smoothing [m]
+  filteringAPara = .FALSE.  ! If .TRUE., a diffusive filtering is applied to the electric potential before computing electromagnetic flutter. 
+                       ! The radius of the filtering is provided by LsmoothAPara.
+  LsmoothAPara = 1.e-3   ! characteristic scale of APara diffusive smoothing [m]
+
+  ! ----- Specify coordinates of a point to be grounded (can be used to set potential reference if SOL is not simulated)
+  NgroundedPoints = 0   ! Sets the number of grounded points
+/
+&GROUND_LST
+  groundedDiagonal = .FALSE. ! sets a grounded diagonal where ipsi+itheta=Npsi+1 (resp. ipsi+itheta+iphi=Npsi*Nphi+2 in 3D)
+                        ! This requires that all domain dimensions are the same to work well ! 
+  groundedZone = 1     ! Zone index of grounded point
+  groundedipsi =   1  ! Radial index of grounded point (0 applies a gounded point to all points in psi) 
+  groundeditheta = 1  ! Poloidal index of grounded point (0 applies a gounded point to all points in theta) 
+  groundediphi = 1       ! Toroidal index of grounded point (0 applies a gounded point to all points in phi) 
+  excitationFrequency = 1e-3 ! frequency with which the ground point shall be excited
+  excitationAmplitude = 1e-3 ! amplitude with which the ground point shall be excited
+/
+
+
+!**********************************************
+! Extra regularisation diffusivities.
+! Turn on extra diffusivity DiffVac when:
+!      - n < nvac
+!      - T < Tvac
+!      - M > Mvac
+!      - W > Wmax
+!**********************************************
+&VAC_LST
+  DiffVac = 0.         ! max diffusion in vacuum [m2/s]
+  Nvac = 1.e10   ! Density where extra vacuum diffusion starts applying [m-3] (Nelts values separated by commas)
+  Tvac = 1.e-2         ! Temperature where extra vacuum diffusion starts applying [eV] (1 value, same for all species)
+  Mvac = 3.e0          ! Threshold on Mach number above which extra diffusion is appli
+  Wmax = 10.           ! maximum vorticity before extra diffusion
+/
+
+
+!**********************************************
+! Fluid neutrals (optional)
+!**********************************************
+&FN_LST
+  FNTransportModel = 0   ! 0: constant D (prescribed manually below [Dn])
+                         ! 1: D from CX dominated momentum balance (without gradTi term)
+			 ! 2: D from CX dominated momentum balance (with gradTi term)
+                         ! 3: same as 2 + convection term from CX dominated momentum balance
+  FNuseTav = .TRUE.      ! If true, the toroidal ion average temperature is used for Tn
+  	                 ! If false, the local Ti is used for Tn (no average)
+  Dn = 1000.	  ! neutrals diffusion coefficient [m2/s]
+  vnmax = 1.e4    ! max neutral velocity allowed [m/s]
+  Rn = 0.9  	  ! Recycling coefficient
+  RE = 0.2        ! Energy recycling coefficient
+  RadialRecycl = .TRUE. ! This option allows to decide whether radial plasma fluxes to the wall should be considered for fluid neutrals recycling
+                        ! It is essentially there for retro compatibility as old versions of the code only considered recycling from poloidal and toroidal fluxes
+			! Switch to .FALSE. to recover the old behaviour
+  NGasPuff = 1	  ! Number of gas puffs	
+/
+&FNCON_LST
+  SpecPuff = 1        ! Indexed of puffed element (NGasPuff values separated by commas)
+  RPuff = 1.45	      ! Radial position of gas puffs [m] (NGasPuff values separated by commas)
+  ZPuff = 0.          ! Vertical position of gas puffs [m] (NGasPuff values separated by commas)
+  iPhiPuff = 8        ! Toroidal indeces of gas puffs (NGasPuff values separated by commas)
+  GasPuffRate = 1.e20 ! Gas puff rate (NGasPuff values separated by commas)
+/
+
+!****************************
+! Feedbacks
+!****************************
+&FB_LST
+  NprofileFeedbacks = 0   ! Number of feedbacks on profiles
+  		      	  ! (if >0, the namelist FBProf_LST must be filled)
+  NPuffFeedbacks = 0      ! Number of feedbacks on density 
+                          ! (if >0, the namelist FBN_LST must be filled)
+/
+!******* profile feedbacks *****
+&FBProf_LST
+  profileFBGains = 1.e-1    ! Gains of the FB loop (list size NprofileFeedbacks)
+  profileFBtaus = 1.e-4     ! time window for error integral [s] (list size NprofileFeedbacks)
+  profileFBtauKeeps = 1.e-2 ! time window for error integral [s] (list size NprofileFeedbacks)
+  profileFBKs = 1.e0        ! Gain amplificator for proportional K (list size NprofileFeedbacks)
+  profileFBDmin = 1.e-2     ! Diffusivity threshold [m2/s] (list size NprofileFeedbacks)
+  profileFBDmax = 10.       ! Diffusivity ceiling [m2/s] (list size NprofileFeedbacks)
+/
+!******* density or concentration feedbacks *****
+&FBN_LST
+  FBelement = 1             ! Element index for feedback (list size NPuffFeedbacks)
+  FBType = 2                ! Feedback type - 2 for feedback on concentration, 1 for feedback on density (list size NPuffFeedbacks)
+  FBpuffOffset = 1.E21      ! Offset of gas puff for feedback scheme [s^-1] (list size NPuffFeedbacks). Equivalent to a feedforward for the PID.
+  FBtarget = 0.4            ! Target density or concentration for feedback corresponding to FBtype [m^-3] or [dimensionless] (list size NPuffFeedbacks)
+  FBR = 0.733               ! Radial location for feedback [m] (list size NPuffFeedbacks)
+  FBZ = 0.107               ! Vertical location for feedback [m] (list size NPuffFeedbacks)
+  FBiphi = 1                ! Toroidal location for feedback (list size NPuffFeedbacks)
+  FBpuffIndex = 1           ! Index of the puff to apply feedback (list size NPuffFeedbacks)
+  FBtaui = 1.e-4            ! Time constant associated with error time integral [s] (list size NPuffFeedbacks)
+  FBGainProp = 5.524e23     ! PID contoller: Proportional part [s^-1] (list size NPuffFeedbacks)
+  FBTauIntg = 0.            ! PID contoller: Integral controller time scale [s]. Larger time scales correspond to less aggresive integral control. Set to zero to turn off. (list size NPuffFeedbacks)
+  FBTauDeriv = 0.           ! PID contoller: Derivative controller time scale [s]. Larger time scales correspond to more aggresive differential control. Set to zero to turn off. (list size NPuffFeedbacks)
+  FBtauiDeriv = 1.e-3       ! PID contoller: Time constant [s] for averaging the time derivative of the error. Used only if FBTauDeriv<>0. (list size NPuffFeedbacks)
+  FBmaxPuff = 1.e24         ! Maximum puff rate [part/s]
+  FBpuffUseRestart = .TRUE. ! True: If present, use previous values saved in the plasmasRestart file, FALSE: Ignore saved values (even if present) and restart with no history.
+/
+
+!****************************
+! Post-treatment options
+!****************************
+&POSTT_LST
+  verboseLevel = 1 ! 1: some outputs
+                   ! 2: time step print every time step
+  saveCurrents = .TRUE.         ! If TRUE the code computes and save currents
+  saveDrifts = .TRUE.           ! If TRUE the code save drift velocities
+  savePiParallel = .TRUE.       ! If TRUE the code save pi Parallel
+  saveFluxes = .TRUE.           ! If TRUE the code save fluxes
+  saveSources = .TRUE.          ! If TRUE the code save sources
+  saveZhdanov = .FALSE.         ! If TRUE the code save Zhdanov matrix (Warning /!\ : heavy)
+  saveDiff = .FALSE.            ! If TRUE the code save diffusion coefficients computed by turbulence model
+  saveMatrix = .FALSE.          ! If TRUE the code save vorticity matrix (Warning /!\ : heavy)
+  saveToroidalAverages = .TRUE. ! If TRUE the code save toroidal averages (for 3D simulations)
+/
+
+!*****************************
+! Internal numerical parameters
+!*****************************
+&NUMPARAM_LST
+  NthreshSI = 1.E12  ! Minimum value allowed for the density [m^-3] (Nelts values separated by commas)
+                    ! NB: when running with EIRENE, better to keep higher than vacuum threshold 
+                    ! in EIRENE = 1.e8 m^-3
+  TthreshSI = 3.e-2, 3.E-2 ! Minimum value allowed for the temperature [eV] (Nelts+1 values separated by commas, the first one for electrons)
+                    ! NB: when running with EIRENE, better to keep higher than vacuum threshold 
+                    ! in EIRENE = 0.02 eV
+  useDiffPerpSL = .FALSE. ! Use advanced slope limiters in perpendicular diffusion to prevent
+                          ! anti-diffusive fluxes
+  implicitCollTerms = .FALSE.         ! Use an implicit approach for computing the collisional momentum and energy
+                                      ! exchanges between species (needed for detached regimes
+                                      ! in large machines with Kotov model)
+  collTimeCap = 1.E99 ! Capping factor for collisional closure terms (in [0. +infinity[).
+  	      	   ! Similar to a CFL parameter: specifies the maximum allowed relative variation
+		   ! of a signed quantity (density, energy) during one time step.
+		   ! 0. = terms will be killed, +infinity (very large value) = no capping
+  neutrTimeCap = 1.e99 ! Capping factor for ionization/recombination/radiation terms between ionized and neutrals species (in [0. +infinity[).
+  	      	 ! Similar to a CFL parameter: specifies the maximum allowed relative variation
+		 ! of a signed quantity (density, energy) during one time step.
+		 ! 0. = terms will be killed, +infinity (very large value) = no capping
+  wallLoadFactor = 1. ! Weight (relative to plasma cell) of cel in wall mask for domain decomposition load balance (cannot be lower than 1.E-6)
+  ! Source rescaling acceleration scheme parameter
+  enableEireneAccel = .FALSE.  ! Source rescaling based acceleration scheme
+  enableCoreAccel = .FALSE.    ! Acceleration with core rescaling (uses nBC)
+  accel_beta = 50.             ! Array of Nelts gains for each element excluding electrons
+  accel_t0SI = 1.0E-4          ! time window in s
+  accel_tauMax = 0.2           ! SOLPS paper sets this at 0.05
+  accel_tauMaxCoreMult = 1.    ! Multiplier for cap for core wrt accel_tauMax
+/
+
+!****************************
+! Implicit solvers parameters
+!****************************
+&SOLV_LST
+  ! In the following few lines, one sets the linear solver library to use for each type of implicit term in the time-stepping scheme
+  ! Code for solvers: 1 = PASTIX, 2 = MUMPS, 3 = AGMG, 4 = PETSC, 5 = LAPACK (only for DiffParal in 2D cases), 6 = HYPRE
+  ! Currently implemented solvers: 1 = PASTIX, 4 = PETSC, 5 = LAPACK (only for DiffParal in 2D cases)
+  solverLibDiffParal = 5 ! Library to use for linear solvers for parallel diffusion
+  solverLibVort      = 4 ! Library to use for linear solver for vorticity
+  solverLibFiltering = 4 ! Library to use for linear solver for potential filtering
+  solverLibFN        = 4 ! Library to use for linear solver for fluid neutrals
+  matSPDDiffParal = .TRUE.  ! Force the matrices of linear solvers for parallel diffusion to be considered as Symmetric Positive Definite (SPD)?
+  matSPDVort = .FALSE.      ! Force the matrix of linear solver for vorticity to be considered as Symmetric Positive Definite (SPD)?
+  matSPDFiltering = .FALSE. ! Force the matrix of linear solver for potential filtering to be considered as Symmetric Positive Definite (SPD)?
+  matSPDFN = .FALSE.        ! Force the matrix of linear solver for fluid neutrals to be considered as Symmetric Positive Definite (SPD)?
+  NshortCycling3DMat = 1 ! Number of time step between two fill and facto of 3D matrix [vorticity, fluid neutrals] (Warning: constrains the time step adaptation)
+  NshortCyclingPhi = 1   ! Time steps between Phi update
+  AGMGitmax = 1000 ! max number of AGMG iterations
+  reUsePCMaxIt = 100 ! Maximum number of time steps a preconditioner for iterative solvers should be reused without being recomputed
+  	       	     ! Use <0 to not enforce any max number (conditions to keep/renew PC on computing time and CFL condition still apply)
+		     ! Use 0 to force update of preconditioner at each time step
+		     ! Warning: keeping the preconditionner prevents the time step from evolving between preconditioner updates as long as
+		     ! the CFL parameter value does not exit the interval CFLtarget+-50%
+  forceSingleMatrix2DSolvers = .FALSE.  ! generate a single matrix with independent blok matrices for 2D solvers
+/
+
+!**********************************
+! IMAS save (only if compiled with IMAS)
+!**********************************
+&IMAS_LST
+  IMASSave       = .FALSE. ! Enable IMAS save
+  IMASTokamak    = 'ITER' ! Name of the machine, a.k.a. name of the database
+  IMASShot       = 999999 ! Shot number (unique ID of the case)
+  IMASRun        = 1      ! Run number (version number of this case)
+  IMASComment    = 'SOLEDGE3X ITER PFPO-1 20MW H nodrift Target=Be Puff=3,31E+22(top) transportCoeffs=flat SOLPSequivalent=103029' ! Description of the case
+  IMASMagneticConfiguration = 'SN' ! IMAS magnetic configuration string ("SN" Single Null, "DN" Double Null, ...)
+  IMASIp         = -5.e6  ! Plasma current Ip value [A]
+  IMASEqDataSource = 'ITER Baseline q95=3 equilibrium IMAS 135011/6 (scaled at 5MA/1.8T for PFPO-1)' ! Magnetic Equilibrium data source
+  IMASq95        = 3.0    ! q95 safety factor at the edge value
+  IMASHModeFlag  = 0      ! H-mode flag (0 for L-mode, 1 for H-mode)
+  IMASInsideSepZones = 3, 4  ! List of zone indices that are inside the separatrix (1-indexed)
+  IMASUpstreamTri = 5237     ! Triangle number (1-indexed) of the upstream location (intersection of the separatrix and OMP)
+  IMASBfieldScaling = 0.333333333333 ! Total magnetic field scaling to apply before saving the equilibrium in the IDS (this will be applied to config/Bphi, Br, Bz, psi, B0)
+  IMASBTorCorrection = -1.   ! Toroidal magnetic field correction factor to apply before saving the equilibrium in the IDS (this will be applied to config/Bphi, B0) - should be fixed in the mesher !
+  IMASBoundaryTypeCode = 11  ! 0 (limiter), 1 (diverted), 11 (LSN), 12 (USN), 13 (DN), 14 (snowflake)
+  IMASInnerSP_RZ      = 4.2217078899713, -3.7959015021786 ! R, Z coordinates of the active inner strike point
+  IMASOuterSP_RZ      = 5.5641951976313, -4.4101689625344 ! R, Z coordinates of the active outer strike point
+  IMASXpoint_RZ       = 5.1254255401822, -3.4219244858383 ! R, Z coordinates of the active X-point
+  IMASMagneticAxis_RZ =            6.35,             0.58 ! R, Z coordinates of the magnetic axis
+/

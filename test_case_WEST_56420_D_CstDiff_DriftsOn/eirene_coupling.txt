@@ -1,0 +1,213 @@
+#############################################################
+#####      SolEdge3X-EIRENE interface input file       ######
+#############################################################
+
+
+AM data:
+~~~~~~~~
+
+
+which am data to use for hydrogen isotopes ? (1: crude model, 2: ITER Kotov)
+am_database = 1
+
+is tweaking of am data allowed ? (sensitivity studies)
+isTweak = F
+
+use hardwired calculations for rate coefficients ?
+isHardwired = F
+
+Enable neutral-neutral collisions ?
+enableNNcols = F
+
+
+Wall parameters:
+~~~~~~~~~~~~~~~~
+
+
+number of types of plasma facing components
+n_wall_types = 1
+
+
+which material is PFC type #1 made of ? (either Be, C, Fe, Mo, or W)
+material = W
+
+is mhims hydrogen recycling model activated for this PFC type ?
+mhims = 0
+
+what is the recycling coefficient on PFCs of type #1 ? - #Nspecies arguments#
+R = 1.0
+
+what is the temperature for PFCs of type #1 [K] ?
+T = 500.
+
+sputtering model for PFCs of type #1 ? (0 none, 1 constant, 2 Bohdansky)
+Sputer_model = 0
+
+physical sputtering yield for PFCs of type #1 [%] ?
+Y_phys = 1.
+
+chemical sputtering yield for PFCs of type #1 [%] ?
+Y_chem = 2.
+
+TRIM reflections: what is the projectile surface binding energy parameter on PFC of type #1 [eV]? - #Nspecies arguments#
+TRIM_surf_bind_energy = 1.00
+
+
+which sheath model is to be used (all PFCs)? (0 standard, 1 PIC code database)
+sheath_model = 0
+
+which angular distribution for reflected particles ? (0: cosine, 1: distribution from TRIM)
+reflect_trim = 1
+
+is full wall resolution requested for recycling (possibly one temperature, albedo for each wall elements) ? (T/F) default = F
+full_wall_res = F
+
+
+Pump parameters:
+~~~~~~~~~~~~~~~~
+
+
+number of pumping surfaces ?
+n_pumps = 1
+
+what is the albedo for pump #1 ? - #Nspecies arguments#
+R = 0.95
+
+Recompute albedo to match pumping speed ?
+set_speed = T
+
+Pumping speed (m3/s) ?
+pumping_speed = 35.
+
+
+Gas puffs:
+~~~~~~~~~~
+
+
+How many gas puffs ? [if 0 leave one card]
+Npuffs = 1
+
+What species are injected ? - #Npuffs arguments#
+D2
+
+Puff rate [part/s] ? - #Npuffs arguments#
+puff_rate = 5.406257110357632e+20
+
+Puff temperature [eV] ? - #Npuffs arguments#
+puff_temp = 0.03
+
+Puff divergence [degrees] ? - #Npuffs arguments#
+puff_div = 90.
+
+Puff location (triangle and side) - #Npuffs arguments#
+puff_tri = 28068
+puff_side = 2
+puff_itor = 1
+
+ 
+Coupling mode:
+~~~~~~~~~~~~~~
+
+
+Use direct coupling or pre-averaged coupling mode ? (T:direct, F pre-averaged)
+direct_coupling = T
+
+Which short cycling modes would you like to use for each level?
+2 numbers separated by comma, first for level 1 (outer), second for level 2 (inner). The level 2 mode has to be lower than the level 1 mode.
+Convention: 1 = constant sources, 2 = sources recalculated based on rescaled neutral density with plasma outflux, 3 = sources recalculated based on rescaled neutral density and updated plasma fields, 6 = rescaled sources to ensure particle conservation, nothing else updated.
+sc_mode = 1, 1
+
+How many soledge2D iterations between calls for each short cycling level?
+2 numbers separated by comma, first for level 1 (outer), second for level 2 (inner). The second number has to be strictly smaller than the first one.
+sc_niter = 250, 25
+
+Fixed simulation time [in seconds of plasma time] maximum between each EIRENE call ? Input 0.00 to deactivate. Additional criteria, does not override sc_niter. Can be used in combination with constrain_plasma_time_step to get exact time intervals.
+fixed_sc_time = 0.00
+
+Which neutral fields rescale mode for short cycling 3?
+Convention: 1 = Rescale with the incoming flux on the wall (prefered), 2 = Keep constant the non recycled ouflux (pumped and non-recycled on the wall), 3 = Keep the non recycled ouflux (pumped and non-recycled on the wall) proportional to the outflux
+sc_rescale_mode = 1
+
+Adaptative short-cycling thresholds: force a new EIRENE run at next time step whenever one of these threshold is crossed. Use 0. to deactivate.
+SnL2: Relative L2 delta of particle source vs. last Monte Carlo (source changed too much)
+Flux: |Relative change| of plasma wall flux vs. last Monte Carlo (wall flux changed too much)
+Sn: |Relative change| of total electron particle source vs. last Monte Carlo (total particle source changed too much)
+SE: |Relative change| of total electron energy source vs. last Monte Carlo (total energy source changed too much)
+adapt_sc_thresh_SnL2 = 0.
+adapt_sc_thresh_Flux = 0.
+adapt_sc_thresh_Sn   = 0.
+adapt_sc_thresh_SE   = 0.
+
+Enable capping/averaging of recombination rates ?
+avg_RC_rates = F
+
+Trigger automatically a new EIRENE call when time since last EIRENE call exceeds EIRENE sources charateristic time?
+trigger_on_tau_EIRENE = F
+
+Constrain the plasma time step with EIRENE characteristic time? (requires trigger_on_tau_EIRENE: T)
+constrain_plasma_time_step = F
+
+If trigger_on_tau_EIRENE is active, trigger on which fraction of EIRENE sources characteristic time? (tau_EIRENE: tau_EIRENE_ratio x tau_SEe)
+tau_EIRENE_ratio = 1.00
+
+Apply the vacuum cleaning ?
+vacuum_clean = F
+
+Is EIRENE run in time dependent mode ?
+time_dep = F
+
+if so, size of the census array ?
+census_size = 100000
+
+if so, number of particles to be launched from the census ?
+npart_census = 10000
+
+Is the feedback scheme on gas puff rate turned on ? (1:on, 0:off)
+feedback = 0
+
+Is this a run with hybrid neutrals? (requires the coupling to HDG fluid code, 1:on, 0:off)
+hybrid_n = F
+
+
+Data for histories:
+~~~~~~~~~~~~~~~~~~~
+
+
+How many particles do you want to launch ? (per stratum, total accross cores)
+npart_eirene = 200000
+
+What seed to use for the random number generator ?
+seed_eirene = 1234  
+
+Averaging solution over a number of iterations ?
+noise_av = F
+
+Averaging window length ? (iterations)
+nite_av = 1000
+
+
+miscellaneous:
+~~~~~~~~~~~~~~
+
+
+Record the particle histories in output files for particles in this range (start, stop, both included, all strata) #<1,000,000 enforced internally
+nhistor_plot = 1, 1
+
+For which strata shoud particle trajectories be plotted ?
+nstrata_plot = 1
+
+Should the radiation matrix be recalculated ?
+rad_mat = F
+
+Is this a test run for the interface ?
+test_mode = F
+
+What should the temperature threshold at the EIRENE entrance be [eV] ? Reaction switch-off triggers at T <= 0.02eV. This should be >0.02 *strictly*.
+T_min_eirene = 0.03
+
+Level of detail of quantities saved in SOLEDGE plasma files. 1: total over all strata, 2: per stratum
+eireneSaveLevel = 1
+
+Should sources be saved split by reaction and stratum ?
+save_per_reaction = F
+

@@ -1,0 +1,28 @@
+#############################################################
+##########      Vaccuum cleaner input file      #############
+#############################################################
+
+
+Reporting:
+~~~~~~~~~~
+
+turn reporting on (before each call to eirene) ?
+report = F
+
+
+Thresholds:
+~~~~~~~~~~
+
+maximum Mach number ? (identical for all species)
+Mimax = 1000000.
+
+maximum Ti/Te ? 
+taumax = 1000000.
+
+
+Predefined vacuum mask:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+load predefined vaccuum mask ? (T/F, file vaccuum_mask.txt)
+vmask = F
+
