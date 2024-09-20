@@ -139,34 +139,34 @@ if __name__ == "__main__":
     output_file_path = os.path.join(controlled_code_folder_path, output_filename)
 
     modify_slurm_script(input_file_path, output_file_path, args.auto_run_setup, script_folder_path)
-    run_command(controlled_code_folder_path, f"chmod +x {output_file_path}")
+    run_command(controlled_code_folder_path, f"chmod +x {output_file_path}", silent_success=True)
 
 
 
 
-    print(f"Modified script saved as {output_filename}")
+    print(f"Modified script saved as {output_filename}\n")
 
     if is_slurm_script(input_file_path):
         if is_in_same_folder(script_folder_path, input_file_path):
-            print("To run the Slurm job, use the following command:")
+            print("To run the Slurm job, use:")
             print(f"python3 auto_run_code/running_control.py slurm_run {output_filename}")
-            print("\nTo safely stop the Slurm job, use this command:")
+            print("\nTo safely stop the Slurm job, use:")
             print(f"python3 auto_run_code/running_control.py safe_stop {output_filename}")
         else:
-            print("To run the Slurm job, use the following command:")
+            print("To run the Slurm job, use:")
             print(f"python3 {os.path.join(script_folder_path, 'running_control.py')} slurm_run {output_filename}")
-            print("\nTo safely stop the Slurm job, use this command:")
+            print("\nTo safely stop the Slurm job, use:")
             print(f"python3 {os.path.join(script_folder_path, 'running_control.py')} safe_stop {output_filename}")
     else:
         if is_in_same_folder(script_folder_path, input_file_path):
-            print("To run the local job, use the following command:")
+            print("To run the local job, use:")
             print(f"./{output_filename}")
-            print("\nTo safely stop the local job, use this command:")
+            print("\nTo safely stop the local job, use:")
             print(f"python3 auto_run_code/running_control.py safe_stop {output_filename}")
         else:
-            print("To run the local job, use the following command:")
+            print("To run the local job, use:")
             print(f"./{output_filename}")
-            print("\nTo safely stop the local job, use this command:")
+            print("\nTo safely stop the local job, use:")
             print(f"python3 {os.path.join(script_folder_path, 'running_control.py')} safe_stop {output_filename}")
 
 

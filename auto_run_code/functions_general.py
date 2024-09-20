@@ -106,7 +106,7 @@ def update_dict_to_file(dictionary, file_path):
 #
 # import subprocess
 
-def run_command(working_directory_str, launch_command, continue_on_failure=False, silent_mode=False):
+def run_command(working_directory_str, launch_command, continue_on_failure=False, silent_mode=False, silent_success=False):
     try:
         process = subprocess.Popen(launch_command, cwd=working_directory_str, shell=True,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -123,7 +123,8 @@ def run_command(working_directory_str, launch_command, continue_on_failure=False
 
         if process.poll() == 0:
             if not silent_mode:
-                print(f"Executing '{launch_command}' in {working_directory_str}: Success")
+                if not silent_success:
+                    print(f"Executing '{launch_command}' in {working_directory_str}: Success")
         else:
             if not silent_mode:
                 print(f"Executing '{launch_command}' in {working_directory_str}: Failed!!!")

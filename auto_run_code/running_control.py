@@ -22,7 +22,7 @@ def operation_functions(operation, launch_script_name):
         sbatch_command = f"sbatch ./{launch_script_name}"
         save_slurm_jobid_command = f" | tee {jobid_file_name}"
         sbatch_command_full = f"{sbatch_command}{save_slurm_jobid_command}"
-        run_command(controlled_code_folder_path, sbatch_command_full)
+        run_command(controlled_code_folder_path, sbatch_command_full, silent_success=True)
 
     elif operation == 'safe_stop':
         if check_file_exists(jobid_file_path):
@@ -70,7 +70,7 @@ def perform_quick_stop(jobid_str):
 
     update_dict_to_file({'slurm_job_id': np.nan}, running_info_file_path)
     if check_file_exists(jobid_file_path):
-        run_command(controlled_code_folder_path, f"rm -r {jobid_file_path}")
+        run_command(controlled_code_folder_path, f"rm -r {jobid_file_path}", silent_success=True)
 
     update_dict_to_file({
         'slurm_iteration_number': 0,
@@ -81,9 +81,9 @@ def perform_quick_stop(jobid_str):
     if change_folder_name_after_finished == 'on':
         add_suffix_to_folder(controlled_code_folder_path, 'quick_stop')
 
-    print("Job stopped successfully")
+    run_command(controlled_code_folder_path, f"scancel {jobid_str}", silent_success=True)
 
-    run_command(controlled_code_folder_path, f"scancel {jobid_str}")
+    print(f"Job {jobid_str} stopped successfully")
 
 
 def apply_safe_stop(running_info_file_path):
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         operation = sys.argv[1]
-        print(f"operation: {operation}")
+        # print(f"operation: {operation}")
 
         if len(sys.argv) > 2:
             launch_script_name = sys.argv[2]

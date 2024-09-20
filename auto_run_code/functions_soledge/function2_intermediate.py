@@ -75,6 +75,18 @@ class Grid:
         self.z = z
         self.value = value
 
+class Path_PP:
+    def __init__(self, run_dir_folder_path, plasma_file_path):
+
+        self.plasma_final_file_path = plasma_file_path
+        self.diffusion_file_path = os.path.join(run_dir_folder_path, "diffusion.h5")
+        self.mesh_file_path = os.path.join(run_dir_folder_path, "mesh.h5")
+        self.refparm_raptorx_file_path = os.path.join(run_dir_folder_path, "refParam_raptorX.h5")
+        self.mesh_raptorx_file_path = os.path.join(run_dir_folder_path, "mesh_raptorX.h5")
+        self.mesh_eirene_file_path = os.path.join(run_dir_folder_path, "meshEIRENE.h5")
+        self.balances_0_file_path = os.path.join(run_dir_folder_path, "balances_0")
+        self.balances_1_file_path = os.path.join(run_dir_folder_path, "balances_1")
+
 
 class PathSummary:
     def __init__(self, controlled_code_folder_path):

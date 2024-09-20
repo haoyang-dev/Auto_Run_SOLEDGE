@@ -5,7 +5,7 @@ num_interval      = 1                     # Save Plasma.h5 file every fixed numb
 cache_limit       = 10                    # Save only the files of last few loops, if negative, save all. [int]
 
 ################ Para Feedback control ################
-active_feedback   = 'on'                  # on/off (can only be actived under Trace_mode: WEST or PRO)
+active_feedback   = 'off'                  # on/off (can only be actived under Trace_mode: WEST or PRO)
 control_method    = 'PID'                 # PID
 target_para       = 'OMPS_ne_FLOAT'       # OMPS_ne_FLOAT or LOT_Te_MAXABS or LOT_Ge_MAXABS or LSN_radiator_distance (LSN_radiator_distance only supproted in WEST)
 Target_value      = 2.47e19
