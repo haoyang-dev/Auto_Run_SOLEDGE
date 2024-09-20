@@ -2,7 +2,7 @@ import numpy as np
 ################ Data Extraction ################
 Trace_mode        = 'WEST'                # BASIC / PRO / WEST
 num_interval      = 1                     # Save Plasma.h5 file every fixed number of first loop: [int]
-cache_limit       = 10                    # Save only the files of last few loops, if negative, save all. [int]
+cache_limit       = 20                    # Save only the files of last few loops, if negative, save all. [int]
 
 ################ Para Feedback control ################
 active_feedback   = 'off'                  # on/off (can only be actived under Trace_mode: WEST or PRO)
